@@ -78,7 +78,7 @@ object TweetStreamer extends TwitterReader with KafkaSender {
 
   val actorSystem: ActorSystem = ActorSystem("Tweetz")
   val topic = "tweetz-Trump"
-  val kafkaServer = "localhost:9092"
+  val kafkaServer = "kafka-1594993188:9092"
   
   def getTweets(term: String) = {
     val done = Source.fromFuture(tweetStream(term))
