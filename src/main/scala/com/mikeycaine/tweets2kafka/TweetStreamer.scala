@@ -1,4 +1,4 @@
-package example
+package com.mikeycaine.tweets2kafka
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -30,10 +30,12 @@ trait MyActorSystem {
 }
 
 trait TwitterReader extends MyActorSystem {
-  val apiKey
-  val apiSecret
-  val token
-  val tokenSecret
+  //import MySecrets._
+
+  val apiKey = MySecrets.apiKey
+  val apiSecret = MySecrets.apiSecret
+  val token = MySecrets.token
+  val tokenSecret = MySecrets.tokenSecret
 
   lazy val consumerKey = ConsumerKey(apiKey, apiSecret)
   lazy val requestToken = RequestToken(token, tokenSecret)
@@ -72,8 +74,8 @@ trait KafkaSender extends MyActorSystem {
   }
 }
 
-object TweetStreamer extends TwitterReader with KafkaSender with MySecrets {
-  
+object TweetStreamer extends TwitterReader with KafkaSender {
+
   val actorSystem: ActorSystem = ActorSystem("Tweetz")
   val topic = "tweetz-Trump"
   val kafkaServer = "localhost:9092"
