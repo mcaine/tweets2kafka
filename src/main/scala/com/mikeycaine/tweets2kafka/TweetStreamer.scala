@@ -30,14 +30,14 @@ trait MyActorSystem {
 }
 
 trait TwitterReader extends MyActorSystem {
-  val apiKey = ???
-  val apiSecret = ???
-  val token = ???
-  val tokenSecret = ???
+  val apiKey
+  val apiSecret
+  val token
+  val tokenSecret
 
-  val consumerKey = ConsumerKey(apiKey, apiSecret)
-  val requestToken = RequestToken(token, tokenSecret)
-  val oAuthCalculator = OAuthCalculator(consumerKey, requestToken)
+  lazy val consumerKey = ConsumerKey(apiKey, apiSecret)
+  lazy val requestToken = RequestToken(token, tokenSecret)
+  lazy val oAuthCalculator = OAuthCalculator(consumerKey, requestToken)
 
   val framing = Framing.delimiter(ByteString("\r"), maximumFrameLength = 100000, allowTruncation = true)
 
@@ -72,10 +72,10 @@ trait KafkaSender extends MyActorSystem {
   }
 }
 
-object TweetStreamer extends TwitterReader with KafkaSender {
+object TweetStreamer extends TwitterReader with KafkaSender with MySecrets {
   
-  val actorSystem: ActorSystem = ActorSystem("MikesActors")
-  val topic = "replicated-kafkatopic"
+  val actorSystem: ActorSystem = ActorSystem("Tweetz")
+  val topic = "tweetz-Trump"
   val kafkaServer = "localhost:9092"
   
   def getTweets(term: String) = {
@@ -95,6 +95,6 @@ object TweetStreamer extends TwitterReader with KafkaSender {
   
   def main(args: Array[String]): Unit = {
     getTweets("Trump")
-    getTweets("Grenfell")
+    //getTweets("Grenfell")
   }
 }
