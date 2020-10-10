@@ -1,7 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaSbtSettings">
-    <option name="customVMPath" />
-    <option name="vmParameters" value="-Dsbt.log.noformat=true" />
+    <option name="customLauncherPath" value="C:\Program Files (x86)\sbt\bin\sbt" />
+    <option name="customVMEnabled" value="true" />
+    <option name="customVMPath" value="$PROJECT_DIR$/../../../../Program Files/Java/jdk1.8.0_121" />
+    <option name="linkedExternalProjectsSettings">
+      <SbtProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/project" />
+          </set>
+        </option>
+        <option name="resolveSbtClassifiers" value="true" />
+        <option name="sbtVersion" value="1.3.13" />
+        <option name="useSbtShellForBuild" value="true" />
+        <option name="useSbtShellForImport" value="true" />
+      </SbtProjectSettings>
+    </option>
+    <option name="maximumHeapSize" value="2000" />
+    <option name="vmParameters" value="-Dsbt.ivy.home=e:\ivy" />
   </component>
 </project>

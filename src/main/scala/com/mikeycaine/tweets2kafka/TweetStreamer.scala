@@ -1,27 +1,20 @@
 package com.mikeycaine.tweets2kafka
 
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.ByteArraySerializer
-import org.apache.kafka.common.serialization.StringSerializer
-
 import akka.Done
 import akka.actor.ActorSystem
-import akka.kafka.ProducerMessage
-import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.Producer
+import akka.kafka.{ProducerMessage, ProducerSettings}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Framing
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
-import play.api.libs.oauth.ConsumerKey
-import play.api.libs.oauth.OAuthCalculator
-import play.api.libs.oauth.RequestToken
+import com.jayway.jsonpath.JsonPath
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
+import play.api.libs.oauth.{ConsumerKey, OAuthCalculator, RequestToken}
 import play.api.libs.ws.ahc.StandaloneAhcWSClient
+
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 trait MyActorSystem {
   implicit def actorSystem: ActorSystem
@@ -57,11 +50,13 @@ trait KafkaSender extends MyActorSystem {
   val kafkaServer: String
   
   lazy val producerSettings = ProducerSettings(actorSystem, new ByteArraySerializer, new StringSerializer).withBootstrapServers(kafkaServer)
+  lazy val stringProducerSettings = ProducerSettings(actorSystem, new StringSerializer, new StringSerializer).withBootstrapServers(kafkaServer)
   
   def createMessage(bs: ByteString) = {
     val str = bs.utf8String
     val partition = 0
     ProducerMessage.Message(new ProducerRecord[Array[Byte], String](topic, partition, null, str), str)
+    //new ProducerRecord[Array[Byte], String](topic, partition, null, str)
   }
 
   def terminateWhenDone(result: Future[Done]): Unit = {
@@ -77,26 +72,88 @@ trait KafkaSender extends MyActorSystem {
 object TweetStreamer extends TwitterReader with KafkaSender {
 
   val actorSystem: ActorSystem = ActorSystem("Tweetz")
-  val topic = "tweetz-Trump"
-  val kafkaServer = "kafka-1594993188:9092"
+  val topic = "tweetz"
+  val kafkaServer = "localhost:9092"
+
+  def sendTweets2Kafka(term: String) = {
+
+    println("WOW")
+
+    val done: Future[Done] =
+      Source(1 to 100)
+        .map(_.toString)
+        .map(value => new ProducerRecord[String, String](topic, value))
+        .runWith(Producer.plainSink(stringProducerSettings))
+
+
+
+//        val done = Source.future(tweetStream(term))
+//          .flatMapConcat { _.bodyAsSource }
+//          .via(framing)
+//          .map(x => createMessage(x))
+//          .via(Producer.flow(producerSettings))
+//          .map { result =>
+//              println(s"${result.offset}")
+//              result
+//          }
+//          .runWith(Sink.ignore)
+
+    println("STILL HERE")
+
+        terminateWhenDone(done)
+
+  }
   
   def getTweets(term: String) = {
-    val done = Source.fromFuture(tweetStream(term))
-      .flatMapConcat { _.bodyAsSource }
-      .via(framing)
-      .map(createMessage(_))
-      .via(Producer.flow(producerSettings))
-      .map { result =>
-          println(s"${result.offset}")
-          result
+    val tweets = tweetStream(term)
+    val src = Source.future(tweets)
+
+    val somethingElse = src
+                          .flatMapConcat(_.bodyAsSource)
+                          .via(framing)
+                          .map(_.utf8String)
+
+    val bits = somethingElse.map { str =>
+      try {
+        val createdAt = JsonPath.read[String](str, "$.created_at")
+        val id = JsonPath.read[Long](str, "$.id")
+        val text = JsonPath.read[String](str, "$.text")
+        val userName = JsonPath.read[String](str, "$.user.name")
+        (id, createdAt, userName, text)
+      } catch { case ex: Exception =>
+        println(s"*** ${ex} *** from ${str}")
       }
-      .runWith(Sink.ignore)
-      
-    terminateWhenDone(done)
+      //(id, createdAt)
+
+    }
+
+    //somethingElse.runForeach(println)
+    bits.runForeach {
+      case (id: Long, createdAt: String, userName: String, text: String) => println(s"${id} ${text}")
+      case _ => println(s"WTF")
+    }
+
+
+
+//    val done = Source.fromFuture(tweetStream(term))
+//      .flatMapConcat { _.bodyAsSource }
+//      .via(framing)
+//      .map(createMessage(_))
+//      .via(Producer.flow(producerSettings))
+//      .map { result =>
+//          println(s"${result.offset}")
+//          result
+//      }
+//      .runWith(Sink.ignore)
+//
+//    terminateWhenDone(done)
   }
   
   def main(args: Array[String]): Unit = {
-    getTweets("Trump")
+    println("Here i am...")
+    //getTweets("Trump")
+    sendTweets2Kafka("Trump")
+
     //getTweets("Grenfell")
   }
 }
