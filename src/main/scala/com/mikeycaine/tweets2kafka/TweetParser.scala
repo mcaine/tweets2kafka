@@ -8,27 +8,26 @@ import akka.kafka.{ProducerMessage, ProducerSettings}
 import akka.stream.SystemMaterializer
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
-import play.api.libs.oauth.{ConsumerKey, OAuthCalculator, RequestToken}
-import play.api.libs.ws.ahc.StandaloneAhcWSClient
-
-import scala.concurrent.duration.Duration
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
+import play.api.libs.json._
+import play.api.libs.oauth._
+import play.api.libs.ws.ahc.StandaloneAhcWSClient
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
-object TweetReader extends MySecrets {
-
-  implicit val actorSystem: ActorSystem = ActorSystem("TweetReaderActors")
+object TweetParser extends MySecrets {
+  implicit val actorSystem: ActorSystem = ActorSystem()
+  implicit val ec = actorSystem.dispatcher
+  implicit val materializer = SystemMaterializer(actorSystem).materializer
 
   actorSystem.registerOnTermination {
     println("GOODBYE")
     System.exit(0)
   }
 
-  implicit val ec = actorSystem.dispatcher
-  implicit val materializer = SystemMaterializer(actorSystem).materializer
 
   val topic = "tweetz"
   val kafkaServer = "localhost:9092"
@@ -39,6 +38,16 @@ object TweetReader extends MySecrets {
   lazy val consumerKey = ConsumerKey(apiKey, apiSecret)
   lazy val requestToken = RequestToken(token, tokenSecret)
   lazy val oAuthCalculator = OAuthCalculator(consumerKey, requestToken)
+
+  def tweet(id: Long) = {
+    StandaloneAhcWSClient()
+      .url("https://api.twitter.com/1.1/statuses/show.json")
+      .sign(oAuthCalculator)
+      .withQueryStringParameters("id" -> id.toString)
+      .withMethod("GET")
+      .withRequestTimeout(Duration(5, TimeUnit.SECONDS))
+      .get()
+  }
 
   def tweetStream(term: String, requestTimeout: Duration) = StandaloneAhcWSClient()
     .url("https://stream.twitter.com/1.1/statuses/filter.json")
@@ -91,6 +100,29 @@ object TweetReader extends MySecrets {
   }
 
   def main(args: Array[String]): Unit = {
-    sendTweets("Trump", Duration(1, TimeUnit.HOURS))
+    //sendTweets("Trump", Duration(1, TimeUnit.HOURS))
+
+    import Tweet._
+
+
+
+    val f = tweet(1315025671996018688L)
+
+    f.onComplete {
+      case Success(v) => {
+        //println(v.body)
+        val jsonString: JsValue = Json.parse(v.body)
+
+        val tweetResult: JsResult[Tweet] = Json.fromJson[Tweet](jsonString)
+        tweetResult match {
+          case JsSuccess(tweet, path) => println(s"Tweet:\n${tweet.text}\nby ${tweet.user.screen_name}")
+        }
+
+
+
+      }
+      case Failure(t) => println(t.getMessage)
+    }
+
   }
 }
