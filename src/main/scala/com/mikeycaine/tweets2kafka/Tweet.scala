@@ -7,7 +7,7 @@ case class Tweet(
                   coordinates: Option[Coordinates],
                   created_at: String,
                   current_user_retweet: Option[Map[String, String]],
-//                  entities: Entities,
+ //                 entities: Entities,
                   favorite_count: Option[Int],
                   favorited: Option[Boolean],
 //                  filter_level: String,
@@ -53,7 +53,7 @@ case class Users(
                   id: Long,
                   id_str: String,
                   is_translator: Boolean,
-//                  lang: String,
+//                 lang: String,
                   listed_count: Int,
 //                  location: Option[String],
                   name: String,
@@ -159,11 +159,11 @@ case class UserMention(id: Long, id_str: String, indices: Seq[Int], name: String
 object Tweet {
   implicit val boundingBoxReads = Json.reads[BoundingBox]
   implicit val placeReads = Json.reads[Place]
-  implicit val userMentionReads = Json.reads[UserMention]
   implicit val urlReads = Json.reads[Url]
   implicit val sizeReads = Json.reads[Size]
   implicit val sizesReads = Json.reads[Sizes]
   implicit val mediaReads = Json.reads[Media]
+  implicit val userMentionReads = Json.reads[UserMention]
   implicit val hashTagReads = Json.reads[Hashtag]
   implicit val entitiesReads = Json.reads[Entities]
   implicit val contributorReads = Json.reads[Contributor]

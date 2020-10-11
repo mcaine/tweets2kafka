@@ -106,7 +106,7 @@ object TweetParser extends MySecrets {
 
 
 
-    val f = tweet(1315025671996018688L)
+    val f = tweet(1315296304948563974L)
 
     f.onComplete {
       case Success(v) => {
