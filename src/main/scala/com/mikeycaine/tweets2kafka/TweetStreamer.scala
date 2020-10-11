@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import akka.kafka.scaladsl.Producer
 import akka.kafka.{ProducerMessage, ProducerSettings}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Framing, Source}
+import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import com.jayway.jsonpath.JsonPath
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -73,35 +73,29 @@ object TweetStreamer extends TwitterReader with KafkaSender {
 
   val actorSystem: ActorSystem = ActorSystem("Tweetz")
   val topic = "tweetz"
-  val kafkaServer = "mikes-kafka:9092"
+  val kafkaServer = "localhost:9092"
+
+  def justNumbers() = {
+        val done: Future[Done] =
+          Source(1 to 100)
+            .map(_.toString)
+            .map(value => new ProducerRecord[String, String](topic, value))
+            .runWith(Producer.plainSink(stringProducerSettings))
+  }
 
   def sendTweets2Kafka(term: String) = {
-
-    println("WOW")
-
-    val done: Future[Done] =
-      Source(1 to 100)
-        .map(_.toString)
-        .map(value => new ProducerRecord[String, String](topic, value))
-        .runWith(Producer.plainSink(stringProducerSettings))
-
-
-
-//        val done = Source.future(tweetStream(term))
-//          .flatMapConcat { _.bodyAsSource }
-//          .via(framing)
-//          .map(x => createMessage(x))
-//          .via(Producer.flow(producerSettings))
-//          .map { result =>
-//              println(s"${result.offset}")
-//              result
-//          }
-//          .runWith(Sink.ignore)
-
-    println("STILL HERE")
+        val done = Source.future(tweetStream(term))
+          .flatMapConcat { _.bodyAsSource }
+          .via(framing)
+          .map(createMessage)
+          .via(Producer.flow(producerSettings))
+          .map { result =>
+              println(s"${result.offset}")
+              result
+          }
+          .runWith(Sink.ignore)
 
         terminateWhenDone(done)
-
   }
   
   def getTweets(term: String) = {
