@@ -4,26 +4,45 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.kafka.scaladsl.Producer
 import akka.kafka.{ProducerMessage, ProducerSettings}
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
-import com.mikeycaine.tweets2kafka.TweetStreamer.{framing, tweetStream}
+import play.api.libs.oauth.{ConsumerKey, OAuthCalculator, RequestToken}
+import play.api.libs.ws.ahc.StandaloneAhcWSClient
+//import com.mikeycaine.tweets2kafka.TweetStreamer.{framing, tweetStream}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-object TweetReader {
+object TweetReader extends MySecrets {
 
   implicit val actorSystem: ActorSystem = ActorSystem("TweetReaderActors")
   implicit val ec = actorSystem.dispatcher
-  implicit val materializer = ActorMaterializer.create(actorSystem)
+  //implicit val materializer = ActorMaterializer.create(actorSystem)
 
   val topic = "tweetz"
   val kafkaServer = "localhost:9092"
 
   lazy val producerSettings = ProducerSettings(actorSystem, new ByteArraySerializer, new StringSerializer).withBootstrapServers(kafkaServer)
+  val framing = Framing.delimiter(ByteString("\r"), maximumFrameLength = 100000, allowTruncation = true)
+
+//  val apiKey = MySecrets.apiKey
+//  val apiSecret = MySecrets.apiSecret
+//  val token = MySecrets.token
+//  val tokenSecret = MySecrets.tokenSecret
+
+  lazy val consumerKey = ConsumerKey(apiKey, apiSecret)
+  lazy val requestToken = RequestToken(token, tokenSecret)
+  lazy val oAuthCalculator = OAuthCalculator(consumerKey, requestToken)
+
+  def tweetStream(term: String) = StandaloneAhcWSClient()
+    .url("https://stream.twitter.com/1.1/statuses/filter.json")
+    .sign(oAuthCalculator)
+    .withQueryStringParameters("track" -> term)
+    .withMethod("GET")
+    .stream()
+
 
   def createMessage(bs: ByteString) = {
     val str = bs.utf8String
