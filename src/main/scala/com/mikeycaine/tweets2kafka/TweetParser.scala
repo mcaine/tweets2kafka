@@ -4,7 +4,8 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.stream.SystemMaterializer
-import play.api.libs.json._
+import org.json4s.DefaultFormats
+import org.json4s.native.JsonParser
 import play.api.libs.oauth._
 import play.api.libs.ws.ahc.StandaloneAhcWSClient
 
@@ -29,18 +30,26 @@ object TweetParser extends MySecrets {
       .get()
 
   def main(args: Array[String]): Unit = {
-    import Tweet._
 
-    tweet(1315296301211291648L).onComplete {
+    implicit val formats = DefaultFormats
+
+    tweet(1315755406828990464L).onComplete {
       case Success(v) =>
-        //println(v.body)
-        val jsonString: JsValue = Json.parse(v.body)
+        println(v.body)
+        println
+        val jsValue = JsonParser.parse(v.body)
+        val tweet = jsValue.extract[Tweet]
+        println(s"Tweet:\n${tweet.text}\nby ${tweet.user.screen_name}")
 
-        val tweetResult: JsResult[Tweet] = Json.fromJson[Tweet](jsonString)
-        tweetResult match {
-          case JsSuccess(tweet, path) => println(s"Tweet:\n${tweet.text}\nby ${tweet.user.screen_name}")
-          case _ =>
-        }
+
+
+//        val jsonString: JsValue = Json.parse(v.body)
+//
+//        val tweetResult: JsResult[Tweet] = Json.fromJson[Tweet](jsonString)
+//        tweetResult match {
+//          case JsSuccess(tweet, path) => /*println(s"Tweet:\n${tweet.text}\nby ${tweet.user.screen_name}")*/
+//          case _ =>
+//        }
       case Failure(t) => println(t.getMessage)
     }
 
