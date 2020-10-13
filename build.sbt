@@ -13,8 +13,9 @@ lazy val root = (project in file(".")).
 	  libraryDependencies += "com.typesafe.akka" %% "akka-stream-kafka" % "2.0.5",
 	  libraryDependencies += "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.2",
     libraryDependencies += "com.jayway.jsonpath" % "json-path" % "2.3.0",
-    libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.1",
-    libraryDependencies += "ch.qos.logback" % "logback-classic" % "0.9.28"
+    //libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.1",
+    libraryDependencies += "ch.qos.logback" % "logback-classic" % "0.9.28",
+    libraryDependencies += "org.json4s" %% "json4s-native" % "3.6.10"
 
     /*,
 	libraryDependencies += "org.json4s" % "json4s-native_2.12" % "3.5.2",
