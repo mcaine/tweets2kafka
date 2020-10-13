@@ -15,7 +15,10 @@ lazy val root = (project in file(".")).
     libraryDependencies += "com.jayway.jsonpath" % "json-path" % "2.3.0",
     //libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.1",
     libraryDependencies += "ch.qos.logback" % "logback-classic" % "0.9.28",
-    libraryDependencies += "org.json4s" %% "json4s-native" % "3.6.10"
+    libraryDependencies += "org.json4s" %% "json4s-native" % "3.6.10",
+    libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.0",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.0" % "test",
+    libraryDependencies += "com.danielasfregola" %% "twitter4s" % "7.0"
 
     /*,
 	libraryDependencies += "org.json4s" % "json4s-native_2.12" % "3.5.2",
